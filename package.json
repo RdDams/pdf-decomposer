@@ -30,7 +30,20 @@
     "type": "git",
     "url": "git+https://github.com/RdDams/pdf-decomposer.git"
   },
-  "keywords": [],
+  "keywords": [
+    "pdf",
+    "pdf-to-text",
+    "pdf-to-image",
+    "text-extraction",
+    "image-extraction",
+    "poppler",
+    "parser",
+    "buffer",
+    "ocr",
+    "tesseract",
+    "poppler",
+    "poppler-utils"
+  ],
   "author": "REMAUD Damien",
   "license": "Apache-2.0",
   "bugs": {
