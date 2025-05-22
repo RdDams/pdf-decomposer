@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { randomUUID } from 'crypto';
 import { pdfToPng } from './pdfToPng';
-import { extractTextFromPdf } from './extract/extractTextFromPdf';
+import { extractTextFromPdf } from './extract/extractText';
 
 /**
  * Extract all from pdf

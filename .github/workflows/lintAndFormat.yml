@@ -18,8 +18,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run ESLint
-        run: npm run lint
+      - name: Run ESLint (strict)
+        run: npm run lint:ci
 
       - name: Run Prettier check
         run: npm run format:check
