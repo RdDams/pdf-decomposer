@@ -1,7 +1,7 @@
 import os from 'os';
 import path from 'path';
 import fs from 'fs';
-import { execFile } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import { promisify } from 'util';
 import { randomUUID } from 'crypto';
 
@@ -13,6 +13,10 @@ export type PageDecompose = {
   images: Array<Buffer>;
 };
 
+export type DecomposeOptions = {
+  ocr?: boolean;
+};
+
 // Interface pour les images retournées (buffers)
 export type Decompose = Array<PageDecompose>;
 
@@ -22,7 +26,8 @@ export type Decompose = Array<PageDecompose>;
  * @returns TODO
  */
 export async function decompose(
-  bufferOrPath: Buffer | string
+  bufferOrPath: Buffer | string,
+  options?: DecomposeOptions
 ): Promise<Decompose> {
   const buffer =
     typeof bufferOrPath === 'string'
@@ -43,26 +48,31 @@ export async function decompose(
   fs.writeFileSync(tmpFilePath, buffer);
   const nbPages = await getPdfPageCount(tmpFilePath);
 
-  // const pages = await pdfToPng(tmpFilePath);
-  const promises: Array<Promise<PageDecompose>> = [];
-  for (let i = 1; i <= nbPages; i++) {
-    promises.push(
-      new Promise<PageDecompose>(async (resolve) => {
-        const [text, images] = await Promise.all([
-          extractPageText(tmpFilePath, i),
-          extractPageImages(tmpFilePath, i),
-        ]);
-
-        resolve({
-          page: i,
-          text,
-          images,
-        });
-      })
-    );
+  if (options?.ocr) {
+    // Convert pdf to png if using OCR
+    const pdfToPngDir = path.join(tmpDir, 'pdf-to-png');
+    if (!fs.existsSync(pdfToPngDir)) fs.mkdirSync(pdfToPngDir);
+    await execFileAsync('pdftoppm', [
+      '-png',
+      tmpFilePath,
+      path.join(pdfToPngDir, 'page'),
+    ]);
   }
 
-  const pages = await Promise.all(promises);
+  const pages: Array<PageDecompose> = [];
+  for (let i = 1; i <= nbPages; i++) {
+    const [text, images] = await Promise.all([
+      extractPageText(tmpFilePath, i, options),
+      extractPageImages(tmpFilePath, i),
+    ]);
+
+    pages.push({
+      page: i,
+      text,
+      images,
+    });
+  }
+
   // Sort pages by page number
   return pages.sort((a, b) => a.page - b.page);
 }
@@ -115,37 +125,6 @@ async function getPdfPageCount(pdfPath: string): Promise<number> {
   return match ? parseInt(match[1], 10) : 0;
 }
 
-// /**
-//  * Convert each pdf page into png
-//  * @param pdfPath path to pdf file
-//  * @returns png buffers
-//  * @throws Error if pdftoppm fails
-//  */
-// function pdfToPng(pdfPath: string): Promise<Array<Buffer>> {
-//   const tmpDir = path.dirname(pdfPath);
-//   return new Promise((resolve, reject) => {
-//     const proc = spawn('pdftoppm', [
-//       '-png',
-//       pdfPath,
-//       path.join(tmpDir, 'page'),
-//     ]);
-
-//     proc.on('close', (code) => {
-//       if (code === 0) {
-//         resolve(
-//           fs.readdirSync(tmpDir).map((f) => fs.readFileSync(`${tmpDir}/${f}`))
-//         );
-//       } else {
-//         reject(new Error(`pdftoppm exited with code ${code}`));
-//       }
-//     });
-
-//     proc.stderr.on('data', (err) => {
-//       throw new Error(`Fail to parse pdf ${err.toString()}`);
-//     });
-//   });
-// }
-
 /**
  * Get one pdf page text
  * @param pdfPath path to pdf file
@@ -155,19 +134,37 @@ async function getPdfPageCount(pdfPath: string): Promise<number> {
  */
 async function extractPageText(
   pdfPath: string,
-  pageIndex: number
+  pageIndex: number,
+  options?: DecomposeOptions
 ): Promise<string> {
-  const { stdout } = await execFileAsync('pdftotext', [
-    '-f',
-    `${pageIndex}`,
-    '-l',
-    `${pageIndex}`,
-    '-layout',
-    pdfPath,
-    '-', // <--- important : "-" = use stdout
-  ]);
+  if (!options?.ocr) {
+    const { stdout } = await execFileAsync('pdftotext', [
+      '-f',
+      `${pageIndex}`,
+      '-l',
+      `${pageIndex}`,
+      '-layout',
+      pdfPath,
+      '-', // <--- important : "-" = use stdout
+    ]);
 
-  return stdout;
+    return stdout;
+  }
+
+  const imagePath = path.join(
+    path.dirname(pdfPath),
+    'pdf-to-png',
+    `page-${pageIndex}.png`
+  );
+  if (!fs.existsSync(imagePath))
+    throw new Error(`Page ${pageIndex} image not found`);
+
+  try {
+    const { stdout } = await execFileAsync('tesseract', [imagePath, 'stdout']); // 10 Mo max buffer
+    return stdout.trim();
+  } catch {
+    throw new Error(`Error OCR on page ${pageIndex}`);
+  }
 }
 
 /**
@@ -183,7 +180,7 @@ async function extractPageImages(
 ): Promise<Array<Buffer>> {
   const tmpDir = path.join(path.dirname(pdfPath), 'img-extract');
   const outputPrefix = path.join(tmpDir, `page-${pageIndex}-img`);
-  if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+  if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir);
 
   await execFileAsync('pdfimages', [
     '-f',

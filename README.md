@@ -31,10 +31,42 @@ sudo apt install poppler-utils
 brew install poppler
 ```
 
+## 🛠 Installing Tesseract (only if using OCR)
+
+This package (`pdf-decomposer`) relies on **Tesseract OCR** to extract content from PNG files. These tools must be installed on your system and accessible from the terminal if you want to use OCR on PDF.
+
+---
+
+### ✅ Ubuntu / Debian
+
+```bash
+sudo apt update
+sudo apt install tesseract-ocr
+```
+
+### ✅ MacOS
+
+```bash
+brew install tesseract
+```
+
 ## Installation
 
 ```bash
 npm install pdf-decomposer
+```
+
+## Usage
+
+```ts
+import { decompose } from 'pdf-decomposer';
+
+// Optional options
+const options = {
+  ocr: true, // use ocr to extract text
+};
+
+const result = await decompose(bufferOrPath, options);
 ```
 
 ## 🤝 Contributing
