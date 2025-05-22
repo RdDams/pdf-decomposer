@@ -9,6 +9,7 @@ This open source project aims to extract text and images from PDF files using na
 
 - Node.js >= 18
 - Poppler installed (`pdfimages`, `pdftoppm`, etc.)
+- Tesseract installed
 - Supported OS: Linux, macOS, or Windows (WSL recommended)
 
 Install dependencies:
@@ -44,7 +45,7 @@ test/ — Automated tests (WIP)
 ```bash
 git clone git@github.com:RdDams/pdf-decomposer.git
 cd pdf-decomposer
-git checkout -b your-feature-branch
+git checkout -b feat/your-feature-branch
 ```
 
 ### 2. Code Style

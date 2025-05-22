@@ -1,6 +1,8 @@
 import { decompose } from '../src/index';
 
-decompose('examples/lorem-ipsum.pdf')
+decompose('examples/lorem-ipsum.pdf', {
+  ocr: false,
+})
   .then(() => process.exit(0))
   .catch((err) => {
     // eslint-disable-next-line no-console
