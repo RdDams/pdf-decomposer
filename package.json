@@ -6,14 +6,25 @@
   "scripts": {
     "build": "tsc",
     "start": "ts-node src/index.ts",
-    "test": "echo \"No tests yet\""
+    "test": "ts-node ./test/test.ts",
+    "lint": "eslint . --ext .ts",
+    "lint:ci": "eslint . --ext .ts --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write ./src",
+    "format:check": "prettier --check ./src"
   },
   "devDependencies": {
+    "@eslint/js": "9.27.0",
     "@types/node": "22.15.21",
+    "@typescript-eslint/eslint-plugin": "8.32.1",
+    "@typescript-eslint/parser": "8.32.1",
     "eslint": "9.27.0",
+    "eslint-config-prettier": "10.1.5",
+    "eslint-plugin-prettier": "5.4.0",
     "prettier": "3.5.3",
     "ts-node": "10.9.2",
-    "typescript": "5.8.3"
+    "typescript": "5.8.3",
+    "typescript-eslint": "8.32.1"
   },
   "repository": {
     "type": "git",
@@ -23,7 +34,8 @@
   "author": "REMAUD Damien",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/RdDams/pdf-decomposer/issues"
+    "url": "https://github.com/RdDams/pdf-decomposer/issues",
+    "email": "rmd.damien+github@gmail.com"
   },
   "homepage": "https://github.com/RdDams/pdf-decomposer#readme"
 }
